@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "958420746280",
+    "project_id": "skywise-climate",
+    "storage_bucket": "skywise-climate.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958420746280:android:75fcc2788e167520f9751d",
+        "android_client_info": {
+          "package_name": "com.example.skywise"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "958420746280-o5cmamrkv83tvobu8rknip2bckn2ovse.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEsVhATe4nfTnxZayhn1Ha7I7eg9Rd218"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "958420746280-o5cmamrkv83tvobu8rknip2bckn2ovse.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
