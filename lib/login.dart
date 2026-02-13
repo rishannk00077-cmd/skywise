@@ -11,236 +11,124 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  TextEditingController emailc = TextEditingController();
-  TextEditingController passwordc = TextEditingController();
-  bool rememberMe = true;
+  final TextEditingController emailc = TextEditingController();
+  final TextEditingController passwordc = TextEditingController();
   bool visible = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/login.png"),
-            fit: BoxFit.fill,
-          ),
-        ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 120, right: 120),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 10),
-
-                /// LOGO
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset("assets/logo.png", height: 60),
-                    Text(
-                      "Skywise",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  "Smart Weather & AI lifestyle Advisor",
-                  style: TextStyle(color: Colors.white),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "Welcome Back!",
+                const Icon(Icons.cloud_queue_rounded,
+                    size: 80, color: Color(0xFF1E3A8A)),
+                const SizedBox(height: 10),
+                const Text(
+                  "Skywise",
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
-                    color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E3A8A)),
+                ),
+                const Text(
+                  "Smart Weather & AI Advisor",
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 50),
+                _buildTextField(
+                    emailc, "Email Address", Icons.email_outlined, false),
+                const SizedBox(height: 20),
+                _buildTextField(
+                    passwordc, "Password", Icons.lock_outline, true),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Forgotpassword())),
+                    child: const Text("Forgot Password?",
+                        style: TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontWeight: FontWeight.bold)),
                   ),
                 ),
-                Text(
-                  "Log in to your account",
-                  style: TextStyle(color: Colors.white),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  height: 225,
-                  width: 300,
-                  child: Column(
-                    children: [
-                      SizedBox(height: 5),
-                      SizedBox(
-                        width: 290,
-                        child: TextField(
-                          controller: emailc,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.email),
-                            labelText: "Email",
-                            hintText: "Enter your Email",
-                            hintStyle: TextStyle(
-                              color: const Color.fromARGB(255, 114, 139, 152),
-                              fontSize: 12,
-                            ),
-                            fillColor: const Color.fromARGB(255, 255, 255, 255),
-                            filled: true,
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            labelStyle: TextStyle(
-                              color: const Color.fromARGB(255, 0, 0, 0),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      SizedBox(
-                        width: 290,
-                        child: TextField(
-                          controller: passwordc,
-                          obscureText: visible,
-                          decoration: InputDecoration(
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  visible = !visible;
-                                });
-                              },
-                              icon: visible
-                                  ? Icon(Icons.visibility_off)
-                                  : Icon(Icons.visibility),
-                            ),
-                            prefixIcon: Icon(Icons.lock),
-                            hintText: "Enter your password",
-                            hintStyle: TextStyle(
-                              color: const Color.fromARGB(255, 114, 139, 152),
-                              fontSize: 12,
-                            ),
-                            labelText: "Password",
-
-                            fillColor: const Color.fromARGB(255, 255, 255, 255),
-                            filled: true,
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            labelStyle: TextStyle(
-                              color: const Color.fromARGB(255, 0, 0, 0),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Forgotpassword(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        height: 50,
-                        width: 290,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          onPressed: () {
-                            login(emailc.text, passwordc.text, context);
-                          },
-                          child: Text(
-                            "Login",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () =>
+                        login(emailc.text, passwordc.text, context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E3A8A),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      elevation: 0,
+                    ),
+                    child: const Text("Sign In",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
                   ),
                 ),
-
-                Row(
-                  children: [
-                    /// LEFT DIVIDER
-                    Expanded(
-                      child: Divider(color: Colors.white70, thickness: 1),
-                    ),
-
-                    /// CHECKBOX + TEXT
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: rememberMe,
-                          activeColor: Colors.blue,
-                          onChanged: (value) {
-                            setState(() {
-                              rememberMe = value!;
-                            });
-                          },
-                        ),
-                        Text(
-                          "Remember Me",
-                          style: TextStyle(color: Colors.lightBlue),
-                        ),
-                      ],
-                    ),
-
-                    /// RIGHT DIVIDER
-                    Expanded(
-                      child: Divider(color: Colors.white70, thickness: 1),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 45),
+                const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account?"),
+                    const Text("Don't have an account? ",
+                        style: TextStyle(color: Colors.grey)),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => Signup()),
-                        );
-                      },
-                      child: Text(
-                        "Signup",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                          MaterialPageRoute(
+                              builder: (context) => const Signup())),
+                      child: const Text("Sign Up",
+                          style: TextStyle(
+                              color: Color(0xFF1E3A8A),
+                              fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, bool isPassword) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F5FA),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword ? visible : false,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(visible ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey),
+                  onPressed: () => setState(() => visible = !visible),
+                )
+              : null,
         ),
       ),
     );
