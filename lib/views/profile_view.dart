@@ -4,6 +4,7 @@ import 'package:skywise/controllers/profile_controller.dart';
 import 'package:skywise/providers/theme_provider.dart';
 import 'package:skywise/views/login_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:ui';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -61,42 +62,93 @@ class _ProfileState extends State<Profile> {
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Account"),
+        title: const Text("Account",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            _buildProfileHeader(isDark),
-            const SizedBox(height: 40),
-            _buildSectionHeader("Account Settings"),
-            _buildProfileTile(Icons.person_outline, "Edit Profile",
-                "Change your name or bio", isDark),
-            _buildProfileTile(Icons.notifications_none, "Notifications",
-                "Weather alerts & advice", isDark),
-            _buildProfileTile(
-                Icons.lock_outline, "Privacy", "Manage your data", isDark),
-            const SizedBox(height: 20),
-            _buildSectionHeader("Appearance"),
-            _buildThemeToggle(themeProvider, isDark),
-            const SizedBox(height: 20),
-            _buildSectionHeader("App Information"),
-            _buildProfileTile(
-                Icons.info_outline, "About Skywise", "v1.0.0 Stable", isDark),
-            _buildProfileTile(
-                Icons.help_outline, "Help Center", "FAQs and support", isDark),
-            const SizedBox(height: 40),
-            _buildLogoutButton(),
-            const SizedBox(height: 40),
-          ],
+      body: Stack(
+        children: [
+          // Background Gradient matching app theme
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  _buildProfileHeader(isDark),
+                  const SizedBox(height: 40),
+                  _buildGlassSection([
+                    _buildSectionHeader("Account Settings"),
+                    _buildProfileTile(Icons.person_outline, "Edit Profile",
+                        "Change your name or bio", isDark),
+                    _buildProfileTile(Icons.notifications_none, "Notifications",
+                        "Weather alerts & advice", isDark),
+                    _buildProfileTile(Icons.lock_outline, "Privacy",
+                        "Manage your data", isDark),
+                  ]),
+                  const SizedBox(height: 20),
+                  _buildGlassSection([
+                    _buildSectionHeader("Appearance"),
+                    _buildThemeToggle(themeProvider, isDark),
+                  ]),
+                  const SizedBox(height: 20),
+                  _buildGlassSection([
+                    _buildSectionHeader("App Information"),
+                    _buildProfileTile(Icons.info_outline, "About Skywise",
+                        "v1.0.0 Stable", isDark),
+                    _buildProfileTile(Icons.help_outline, "Help Center",
+                        "FAQs and support", isDark),
+                  ]),
+                  const SizedBox(height: 40),
+                  _buildLogoutButton(),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassSection(List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Column(children: children),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildProfileHeader(bool isDark) {
-    final primaryColor = Theme.of(context).primaryColor;
     return Column(
       children: [
         Stack(
@@ -106,17 +158,16 @@ class _ProfileState extends State<Profile> {
               onTap: _isUploading ? null : _handleImageUpload,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration:
-                    BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.white24, shape: BoxShape.circle),
                 child: CircleAvatar(
                   radius: 60,
-                  backgroundColor:
-                      isDark ? Colors.grey[800] : const Color(0xFFF0F5FA),
+                  backgroundColor: Colors.white10,
                   backgroundImage: _profileImageUrl != null
                       ? CachedNetworkImageProvider(_profileImageUrl!)
                       : null,
                   child: _profileImageUrl == null
-                      ? Icon(Icons.person, size: 70, color: primaryColor)
+                      ? const Icon(Icons.person, size: 70, color: Colors.white)
                       : null,
                 ),
               ),
@@ -134,7 +185,8 @@ class _ProfileState extends State<Profile> {
                   padding: const EdgeInsets.all(8),
                   decoration: const BoxDecoration(
                       color: Color(0xFF3B82F6), shape: BoxShape.circle),
-                  child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: Colors.white, size: 18),
                 ),
               ),
           ],
@@ -142,14 +194,15 @@ class _ProfileState extends State<Profile> {
         const SizedBox(height: 15),
         Text(
           _userName,
-          style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1E3A8A)),
+          style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.5),
         ),
         Text(
           _userEmail,
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
         ),
       ],
     );
@@ -163,9 +216,9 @@ class _ProfileState extends State<Profile> {
         child: Text(
           title.toUpperCase(),
           style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w900,
-              color: Colors.blueGrey.shade200,
+              color: Colors.white.withOpacity(0.4),
               letterSpacing: 1.5),
         ),
       ),
@@ -174,24 +227,25 @@ class _ProfileState extends State<Profile> {
 
   Widget _buildThemeToggle(ThemeProvider provider, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : const Color(0xFFF0F5FA),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12)),
           child: Icon(isDark ? Icons.dark_mode : Icons.light_mode,
-              color: Theme.of(context).primaryColor),
+              color: Colors.white),
         ),
         title: const Text("Dark Mode",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: const Text("Switch between light and dark themes",
-            style: TextStyle(fontSize: 12, color: Colors.grey)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        subtitle: Text("Switch between themes",
+            style:
+                TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
         trailing: Switch(
           value: isDark,
           onChanged: (value) => provider.toggleTheme(),
-          activeColor: Theme.of(context).primaryColor,
+          activeColor: const Color(0xFF3B82F6),
         ),
       ),
     );
@@ -200,20 +254,23 @@ class _ProfileState extends State<Profile> {
   Widget _buildProfileTile(
       IconData icon, String title, String subtitle, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : const Color(0xFFF0F5FA),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: Theme.of(context).primaryColor),
+          child: Icon(icon, color: Colors.white),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
         subtitle: Text(subtitle,
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        trailing: const Icon(Icons.arrow_forward_ios,
-            color: Colors.black12, size: 16),
+            style:
+                TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+        trailing: Icon(Icons.arrow_forward_ios,
+            color: Colors.white.withOpacity(0.2), size: 14),
         onTap: () {},
       ),
     );
@@ -222,29 +279,44 @@ class _ProfileState extends State<Profile> {
   Widget _buildLogoutButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: TextButton(
-        onPressed: () async {
-          await _controller.signOut();
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const Login()),
-              (route) => false,
-            );
-          }
-        },
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.redAccent,
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.logout),
-            SizedBox(width: 10),
-            Text("Logout Session",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+            ),
+            child: TextButton(
+              onPressed: () async {
+                await _controller.signOut();
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Login()),
+                    (route) => false,
+                  );
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.logout_rounded, size: 20),
+                  SizedBox(width: 10),
+                  Text("Logout Session",
+                      style:
+                          TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:skywise/models/weather_model.dart';
 import 'package:skywise/controllers/saved_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:skywise/providers/theme_provider.dart';
+import 'dart:ui';
 
 class Saved extends StatefulWidget {
   const Saved({super.key});
@@ -20,36 +21,61 @@ class _SavedState extends State<Saved> {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Saved Locations"),
+        title: const Text("Saved Locations",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _controller.getSavedCitiesStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: CircularProgressIndicator(
-                    color: Theme.of(context).primaryColor));
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState(isDark);
-          }
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+              ),
+            ),
+          ),
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              var doc = snapshot.data!.docs[index];
-              return _CityWeatherCard(
-                cityName: doc['name'],
-                docId: doc.id,
-                controller: _controller,
-                onDelete: () => _controller.removeCity(doc.id),
-                isDark: isDark,
+          StreamBuilder<QuerySnapshot>(
+            stream: _controller.getSavedCitiesStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.white));
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _buildEmptyState(isDark);
+              }
+
+              return SafeArea(
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    var doc = snapshot.data!.docs[index];
+                    return _CityWeatherCard(
+                      cityName: doc['name'],
+                      docId: doc.id,
+                      controller: _controller,
+                      onDelete: () => _controller.removeCity(doc.id),
+                      isDark: isDark,
+                    );
+                  },
+                ),
               );
             },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -59,14 +85,18 @@ class _SavedState extends State<Saved> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bookmark_border_outlined,
-              size: 80, color: isDark ? Colors.white10 : Colors.blue.shade100),
+          Icon(Icons.bookmark_border_rounded,
+              size: 100, color: Colors.white.withOpacity(0.2)),
           const SizedBox(height: 20),
-          Text("No saved locations yet",
+          const Text("No saved locations yet",
               style: TextStyle(
-                  color: isDark ? Colors.white60 : Colors.grey, fontSize: 16)),
-          const Text("Search and bookmark cities on Home",
-              style: TextStyle(color: Colors.black26, fontSize: 13)),
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text("Search and bookmark cities on Home",
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 14)),
         ],
       ),
     );
@@ -90,58 +120,69 @@ class _CityWeatherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<WeatherData>(
-      future: controller.fetchWeather(cityName),
-      builder: (context, snapshot) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 15),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            title: Text(
-              cityName,
-              style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1E3A8A),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
-            subtitle: Text(
-              snapshot.hasData ? snapshot.data!.mainCondition : "Loading...",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (snapshot.hasData)
-                  Text(
-                    "${snapshot.data!.temperature.round()}°",
-                    style: TextStyle(
-                        fontSize: 24,
+            child: FutureBuilder<WeatherData>(
+              future: controller.fetchWeather(cityName),
+              builder: (context, snapshot) {
+                return ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  title: Text(
+                    cityName,
+                    style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        color: Theme.of(context).primaryColor),
+                        fontSize: 20,
+                        letterSpacing: -0.5),
                   ),
-                const SizedBox(width: 15),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.redAccent, size: 20),
-                  onPressed: onDelete,
-                ),
-              ],
+                  subtitle: Text(
+                    snapshot.hasData
+                        ? snapshot.data!.mainCondition.toUpperCase()
+                        : "LOADING...",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (snapshot.hasData)
+                        Text(
+                          "${snapshot.data!.temperature.round()}\u00B0",
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w200,
+                              color: Colors.white),
+                        ),
+                      const SizedBox(width: 15),
+                      IconButton(
+                        icon: const Icon(Icons.delete_sweep_rounded,
+                            color: Colors.white70, size: 24),
+                        onPressed: onDelete,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:skywise/controllers/forecast_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:skywise/providers/theme_provider.dart';
+import 'dart:ui';
 
 class Forecast extends StatefulWidget {
   const Forecast({super.key});
@@ -52,105 +53,150 @@ class _ForecastState extends State<Forecast> {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text("7-Day Forecast"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          "7-Day Forecast",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+        ),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                  color: Theme.of(context).primaryColor))
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              itemCount: _forecastList.length,
-              itemBuilder: (context, index) {
-                final item = _forecastList[index];
-                return _buildForecastCard(item, isDark);
-              },
+      body: Stack(
+        children: [
+          // Background Gradient matching Home
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+              ),
             ),
+          ),
+
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
+              : SafeArea(
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    itemCount: _forecastList.length,
+                    itemBuilder: (context, index) {
+                      final item = _forecastList[index];
+                      return _buildPremiumForecastCard(item, isDark);
+                    },
+                  ),
+                ),
+        ],
+      ),
     );
   }
 
-  Widget _buildForecastCard(ForecastData data, bool isDark) {
+  Widget _buildPremiumForecastCard(ForecastData data, bool isDark) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 15),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('EEEE, d MMM').format(data.date),
-                  style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('EEEE').format(data.date),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18),
+                      ),
+                      Text(
+                        DateFormat('d MMM').format(data.date),
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          data.description,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  data.description,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _getSmallWeatherIcon(data.mainCondition),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${data.temperature.round()}\u00B0",
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w200),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Row(
-            children: [
-              _getWeatherIcon(data.mainCondition),
-              const SizedBox(width: 25),
-              Text(
-                "${data.temperature.round()}°",
-                style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF1E3A8A),
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900),
-              ),
-              const Icon(Icons.chevron_right, color: Colors.black12),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _getWeatherIcon(String condition) {
+  Widget _getSmallWeatherIcon(String condition) {
     IconData icon;
-    Color color = const Color(0xFF3B82F6);
+    Color color = Colors.white;
 
     switch (condition.toLowerCase()) {
       case 'clear':
-        icon = Icons.wb_sunny_outlined;
-        color = Colors.orange;
+        icon = Icons.wb_sunny_rounded;
         break;
       case 'clouds':
-        icon = Icons.wb_cloudy_outlined;
+        icon = Icons.wb_cloudy_rounded;
         break;
       case 'rain':
-        icon = Icons.umbrella_outlined;
+        icon = Icons.umbrella_rounded;
         break;
       case 'thunderstorm':
-        icon = Icons.thunderstorm_outlined;
+        icon = Icons.thunderstorm_rounded;
         break;
       case 'snow':
-        icon = Icons.ac_unit_outlined;
+        icon = Icons.ac_unit_rounded;
         break;
       default:
-        icon = Icons.cloud_queue_outlined;
+        icon = Icons.cloud_queue_rounded;
     }
 
-    return Icon(icon, color: color, size: 28);
+    return Icon(icon, color: color, size: 30);
   }
 }

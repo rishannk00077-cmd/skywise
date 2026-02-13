@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skywise/views/login_view.dart';
 import 'package:skywise/controllers/auth_controller.dart';
-import 'package:provider/provider.dart';
-import 'package:skywise/providers/theme_provider.dart';
 
 class Signup extends StatefulWidget {
   const Signup({super.key});
@@ -21,10 +19,8 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -32,14 +28,15 @@ class _SignupState extends State<Signup> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.person_add_outlined, size: 70, color: primaryColor),
+                const Icon(Icons.person_add_outlined,
+                    size: 70, color: Color(0xFF1E3A8A)),
                 const SizedBox(height: 10),
-                Text(
+                const Text(
                   "Create Account",
                   style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: primaryColor),
+                      color: Color(0xFF1E3A8A)),
                 ),
                 const Text(
                   "Join Skywise for smart weather insights",
@@ -47,16 +44,16 @@ class _SignupState extends State<Signup> {
                 ),
                 const SizedBox(height: 40),
                 _buildTextField(
-                    namec, "Full Name", Icons.person_outline, false, isDark),
-                const SizedBox(height: 15),
-                _buildTextField(emailc, "Email Address", Icons.email_outlined,
-                    false, isDark),
+                    namec, "Full Name", Icons.person_outline, false),
                 const SizedBox(height: 15),
                 _buildTextField(
-                    passwordc, "Password", Icons.lock_outline, true, isDark),
+                    emailc, "Email Address", Icons.email_outlined, false),
+                const SizedBox(height: 15),
+                _buildTextField(
+                    passwordc, "Password", Icons.lock_outline, true),
                 const SizedBox(height: 15),
                 _buildTextField(confirmPasswordc, "Confirm Password",
-                    Icons.lock_reset_outlined, true, isDark),
+                    Icons.lock_reset_outlined, true),
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -73,7 +70,7 @@ class _SignupState extends State<Signup> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
+                      backgroundColor: const Color(0xFF1E3A8A),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15)),
                       elevation: 0,
@@ -96,9 +93,9 @@ class _SignupState extends State<Signup> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => const Login())),
-                      child: Text("Sign In",
+                      child: const Text("Sign In",
                           style: TextStyle(
-                              color: primaryColor,
+                              color: Color(0xFF1E3A8A),
                               fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -112,20 +109,19 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label,
-      IconData icon, bool isPassword, bool isDark) {
+      IconData icon, bool isPassword) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F5FA),
+        color: const Color(0xFFF0F5FA),
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword ? visible : false,
-        style: TextStyle(color: isDark ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
-          prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

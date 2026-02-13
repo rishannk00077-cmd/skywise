@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:skywise/views/forgot_password_view.dart';
 import 'package:skywise/controllers/auth_controller.dart';
 import 'package:skywise/views/signup_view.dart';
-import 'package:provider/provider.dart';
-import 'package:skywise/providers/theme_provider.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -20,10 +18,8 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -31,25 +27,26 @@ class _LoginState extends State<Login> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.cloud_queue_rounded, size: 80, color: primaryColor),
+                const Icon(Icons.cloud_queue_rounded,
+                    size: 80, color: Color(0xFF1E3A8A)),
                 const SizedBox(height: 10),
-                Text(
+                const Text(
                   "Skywise",
                   style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: primaryColor),
+                      color: Color(0xFF1E3A8A)),
                 ),
                 const Text(
                   "Smart Weather & AI Advisor",
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 50),
-                _buildTextField(emailc, "Email Address", Icons.email_outlined,
-                    false, isDark),
+                _buildTextField(
+                    emailc, "Email Address", Icons.email_outlined, false),
                 const SizedBox(height: 20),
                 _buildTextField(
-                    passwordc, "Password", Icons.lock_outline, true, isDark),
+                    passwordc, "Password", Icons.lock_outline, true),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -71,7 +68,7 @@ class _LoginState extends State<Login> {
                     onPressed: () =>
                         _controller.login(emailc.text, passwordc.text, context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
+                      backgroundColor: const Color(0xFF1E3A8A),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15)),
                       elevation: 0,
@@ -94,9 +91,9 @@ class _LoginState extends State<Login> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => const Signup())),
-                      child: Text("Sign Up",
+                      child: const Text("Sign Up",
                           style: TextStyle(
-                              color: primaryColor,
+                              color: Color(0xFF1E3A8A),
                               fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -110,20 +107,19 @@ class _LoginState extends State<Login> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label,
-      IconData icon, bool isPassword, bool isDark) {
+      IconData icon, bool isPassword) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F5FA),
+        color: const Color(0xFFF0F5FA),
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword ? visible : false,
-        style: TextStyle(color: isDark ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
-          prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
