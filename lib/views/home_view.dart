@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:skywise/models/weather_model.dart';
-import 'package:skywise/services/api_service.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:skywise/controllers/home_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:skywise/providers/theme_provider.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -13,9 +13,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final ApiService _apiService = ApiService();
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final HomeController _controller = HomeController();
 
   WeatherData? _weather;
   String _currentCity = "Mumbai";
@@ -26,19 +24,22 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _fetchWeatherData(_currentCity);
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    final lastCity = await _controller.loadLastCity();
+    _fetchWeatherData(lastCity);
   }
 
   Future<void> _fetchWeatherData(String city) async {
     setState(() => _isLoading = true);
     try {
-      final weather = await _apiService.fetchWeather(city);
-      final advice = await _apiService.getAIAdvice(weather);
-
+      final data = await _controller.fetchWeatherData(city);
       setState(() {
-        _weather = weather;
-        _aiAdvice = advice;
-        _currentCity = city;
+        _weather = data['weather'];
+        _aiAdvice = data['advice'];
+        _currentCity = data['city'];
         _isLoading = false;
       });
     } catch (e) {
@@ -51,57 +52,48 @@ class _HomeState extends State<Home> {
     }
   }
 
-  Future<void> _saveCity(String city) async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('saved_cities')
-          .doc(city)
-          .set({'name': city, 'timestamp': FieldValue.serverTimestamp()});
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$city saved to your list")),
-        );
-      }
+  Future<void> _handleSaveCity() async {
+    await _controller.saveCity(_currentCity);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("$_currentCity saved to your list")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F5FA),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: _buildSearchBar(),
+        title: _buildSearchBar(isDark),
         actions: [
           IconButton(
-            onPressed: () => _saveCity(_currentCity),
-            icon: const Icon(Icons.bookmark_add_outlined,
-                color: Color(0xFF1E3A8A)),
+            onPressed: _handleSaveCity,
+            icon: Icon(Icons.bookmark_add_outlined,
+                color: Theme.of(context).primaryColor),
           ),
           const SizedBox(width: 10),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: Theme.of(context).primaryColor))
           : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
+                  _buildHeader(isDark),
                   const SizedBox(height: 25),
                   _buildMainWeatherCard(size),
                   const SizedBox(height: 25),
-                  _buildDetailGrid(),
+                  _buildDetailGrid(isDark),
                   const SizedBox(height: 25),
-                  _buildAIAdviceSection(),
+                  _buildAIAdviceSection(isDark),
                   const SizedBox(height: 100), // Navigation buffer
                 ],
               ),
@@ -109,11 +101,11 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(bool isDark) {
     return Container(
       height: 45,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -125,12 +117,14 @@ class _HomeState extends State<Home> {
       ),
       child: TextField(
         controller: _searchController,
-        decoration: const InputDecoration(
+        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+        decoration: InputDecoration(
           hintText: "Search city...",
-          hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
-          prefixIcon: Icon(Icons.search, color: Color(0xFF1E3A8A), size: 20),
+          hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+          prefixIcon: Icon(Icons.search,
+              color: Theme.of(context).primaryColor, size: 20),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 11),
+          contentPadding: const EdgeInsets.symmetric(vertical: 11),
         ),
         onSubmitted: (value) {
           if (value.isNotEmpty) _fetchWeatherData(value);
@@ -139,16 +133,16 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           _currentCity,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A)),
+              color: isDark ? Colors.white : const Color(0xFF1E3A8A)),
         ),
         Text(
           DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
@@ -159,15 +153,16 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildMainWeatherCard(Size size) {
+    final primaryColor = Theme.of(context).primaryColor;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E3A8A),
+        color: primaryColor,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+            color: primaryColor.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -197,15 +192,7 @@ class _HomeState extends State<Home> {
                   ),
                 ],
               ),
-              Image.network(
-                "https://cdn-icons-png.flaticon.com/512/414/414927.png",
-                width: 100,
-                height: 100,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.cloud_outlined,
-                    size: 80,
-                    color: Colors.white),
-              ),
+              _getWeatherIcon(_weather?.mainCondition ?? ""),
             ],
           ),
           const SizedBox(height: 20),
@@ -226,6 +213,33 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget _getWeatherIcon(String condition) {
+    IconData icon;
+    Color color = Colors.white;
+
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        icon = Icons.wb_sunny_rounded;
+        break;
+      case 'clouds':
+        icon = Icons.wb_cloudy_rounded;
+        break;
+      case 'rain':
+        icon = Icons.umbrella_rounded;
+        break;
+      case 'thunderstorm':
+        icon = Icons.thunderstorm_rounded;
+        break;
+      case 'snow':
+        icon = Icons.ac_unit_rounded;
+        break;
+      default:
+        icon = Icons.cloud_queue_rounded;
+    }
+
+    return Icon(icon, color: color, size: 80);
+  }
+
   Widget _infoTile(IconData icon, String value, String label) {
     return Column(
       children: [
@@ -242,7 +256,7 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildDetailGrid() {
+  Widget _buildDetailGrid(bool isDark) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -252,19 +266,23 @@ class _HomeState extends State<Home> {
       childAspectRatio: 2.5,
       children: [
         _buildSmallDetailCard(Icons.wb_sunny_outlined, "Feels Like",
-            "${_weather?.temperature.round() ?? '--'}°"),
-        _buildSmallDetailCard(Icons.visibility_outlined, "Visibility", "10 km"),
-        _buildSmallDetailCard(Icons.compress_outlined, "Pressure", "1012 hPa"),
-        _buildSmallDetailCard(Icons.beach_access_outlined, "UV Index", "Low"),
+            "${_weather?.feelsLike.round() ?? '--'}°", isDark),
+        _buildSmallDetailCard(Icons.visibility_outlined, "Visibility",
+            "${_weather?.visibility.toStringAsFixed(1) ?? '--'} km", isDark),
+        _buildSmallDetailCard(Icons.compress_outlined, "Pressure",
+            "${_weather?.pressure.round() ?? '--'} hPa", isDark),
+        _buildSmallDetailCard(Icons.water_drop_outlined, "Humidity",
+            "${_weather?.humidity.round() ?? '--'}%", isDark),
       ],
     );
   }
 
-  Widget _buildSmallDetailCard(IconData icon, String label, String value) {
+  Widget _buildSmallDetailCard(
+      IconData icon, String label, String value, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -278,10 +296,10 @@ class _HomeState extends State<Home> {
               Text(label,
                   style: const TextStyle(fontSize: 11, color: Colors.grey)),
               Text(value,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E3A8A))),
+                      color: isDark ? Colors.white : const Color(0xFF1E3A8A))),
             ],
           ),
         ],
@@ -289,14 +307,15 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildAIAdviceSection() {
+  Widget _buildAIAdviceSection(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.blue.shade50),
+        border:
+            Border.all(color: isDark ? Colors.white12 : Colors.blue.shade50),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,8 +326,8 @@ class _HomeState extends State<Home> {
               const SizedBox(width: 10),
               Text(
                 "Skywise Assistant".toUpperCase(),
-                style: const TextStyle(
-                    color: Color(0xFF1E3A8A),
+                style: TextStyle(
+                    color: isDark ? Colors.white70 : const Color(0xFF1E3A8A),
                     fontWeight: FontWeight.w900,
                     fontSize: 13,
                     letterSpacing: 1),
@@ -318,8 +337,8 @@ class _HomeState extends State<Home> {
           const SizedBox(height: 12),
           Text(
             _aiAdvice,
-            style: const TextStyle(
-                color: Color(0xFF64748B),
+            style: TextStyle(
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 15,
                 height: 1.5,
                 fontWeight: FontWeight.w500),

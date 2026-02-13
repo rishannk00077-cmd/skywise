@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:skywise/service.dart';
+import 'package:skywise/controllers/auth_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:skywise/providers/theme_provider.dart';
 
 class Forgotpassword extends StatefulWidget {
   const Forgotpassword({super.key});
@@ -9,17 +11,18 @@ class Forgotpassword extends StatefulWidget {
 }
 
 class _ForgotpasswordState extends State<Forgotpassword> {
+  final AuthController _controller = AuthController();
   final TextEditingController emailc = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1E3A8A)),
+          icon: Icon(Icons.arrow_back_ios_new, color: primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -30,15 +33,14 @@ class _ForgotpasswordState extends State<Forgotpassword> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_reset_rounded,
-                  size: 80, color: Color(0xFF1E3A8A)),
+              Icon(Icons.lock_reset_rounded, size: 80, color: primaryColor),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Reset Password",
                 style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E3A8A)),
+                    color: primaryColor),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -47,7 +49,8 @@ class _ForgotpasswordState extends State<Forgotpassword> {
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 40),
-              _buildTextField(emailc, "Email Address", Icons.email_outlined),
+              _buildTextField(
+                  emailc, "Email Address", Icons.email_outlined, isDark),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
@@ -55,14 +58,14 @@ class _ForgotpasswordState extends State<Forgotpassword> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (emailc.text.isNotEmpty) {
-                      forgotpassword(emailc.text, context);
+                      _controller.forgotPassword(emailc.text, context);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                           content: Text("Please enter your email")));
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
+                    backgroundColor: primaryColor,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15)),
                     elevation: 0,
@@ -81,19 +84,20 @@ class _ForgotpasswordState extends State<Forgotpassword> {
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F5FA),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F5FA),
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextField(
         controller: controller,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
+          prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

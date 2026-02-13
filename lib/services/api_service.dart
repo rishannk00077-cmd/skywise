@@ -29,18 +29,35 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final List list = jsonDecode(response.body)['list'];
-      return list.map((item) => ForecastData.fromJson(item)).toList();
+      List<ForecastData> fullList =
+          list.map((item) => ForecastData.fromJson(item)).toList();
+
+      // Filter to get one forecast per day (around 12:00:00 if possible)
+      Map<String, ForecastData> dailyForecasts = {};
+      for (var item in fullList) {
+        String day = "${item.date.year}-${item.date.month}-${item.date.day}";
+        if (!dailyForecasts.containsKey(day) || item.date.hour == 12) {
+          dailyForecasts[day] = item;
+        }
+      }
+      return dailyForecasts.values.toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
     } else {
       throw Exception('Failed to load forecast data');
     }
   }
 
   Future<String> getAIAdvice(WeatherData weather) async {
-    final model = GenerativeModel(model: 'gemini-pro', apiKey: _geminiApiKey);
-    final prompt =
-        'Given the weather in ${weather.cityName} is ${weather.temperature}°C with ${weather.description}, what are some lifestyle recommendations?';
-    final content = [Content.text(prompt)];
-    final response = await model.generateContent(content);
-    return response.text ?? "Stay safe!";
+    try {
+      final model = GenerativeModel(model: 'gemini-pro', apiKey: _geminiApiKey);
+      final prompt =
+          'Given the weather in ${weather.cityName} is ${weather.temperature}°C with ${weather.description}, what are some lifestyle recommendations? Keep it brief (2-3 sentences).';
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+      return response.text ??
+          "Enjoy your day and stay prepared for the ${weather.mainCondition}!";
+    } catch (e) {
+      return "Stay safe and check local weather alerts regularly!";
+    }
   }
 }

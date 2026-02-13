@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:skywise/models/weather_model.dart';
-import 'package:skywise/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:skywise/controllers/forecast_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:skywise/providers/theme_provider.dart';
 
 class Forecast extends StatefulWidget {
   const Forecast({super.key});
@@ -11,20 +13,29 @@ class Forecast extends StatefulWidget {
 }
 
 class _ForecastState extends State<Forecast> {
-  final ApiService _apiService = ApiService();
+  final ForecastController _controller = ForecastController();
   List<ForecastData> _forecastList = [];
   bool _isLoading = true;
-  final String _city = "Mumbai";
+  String _city = "Mumbai";
 
   @override
   void initState() {
     super.initState();
+    _loadCityAndFetchForecast();
+  }
+
+  Future<void> _loadCityAndFetchForecast() async {
+    final city = await _controller.loadLastCity();
+    setState(() {
+      _city = city;
+    });
     _fetchForecast();
   }
 
   Future<void> _fetchForecast() async {
+    setState(() => _isLoading = true);
     try {
-      final forecast = await _apiService.fetchForecast(_city);
+      final forecast = await _controller.fetchForecast(_city);
       setState(() {
         _forecastList = forecast;
         _isLoading = false;
@@ -38,38 +49,34 @@ class _ForecastState extends State<Forecast> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F5FA),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
         centerTitle: true,
-        title: const Text(
-          "7-Day Forecast",
-          style:
-              TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold),
-        ),
+        title: const Text("7-Day Forecast"),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: Theme.of(context).primaryColor))
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               itemCount: _forecastList.length,
               itemBuilder: (context, index) {
                 final item = _forecastList[index];
-                return _buildForecastCard(item);
+                return _buildForecastCard(item, isDark);
               },
             ),
     );
   }
 
-  Widget _buildForecastCard(ForecastData data) {
+  Widget _buildForecastCard(ForecastData data, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -88,13 +95,13 @@ class _ForecastState extends State<Forecast> {
               children: [
                 Text(
                   DateFormat('EEEE, d MMM').format(data.date),
-                  style: const TextStyle(
-                      color: Color(0xFF1E3A8A),
+                  style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                       fontWeight: FontWeight.bold,
                       fontSize: 15),
                 ),
                 Text(
-                  data.mainCondition,
+                  data.description,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],
@@ -102,13 +109,12 @@ class _ForecastState extends State<Forecast> {
           ),
           Row(
             children: [
-              const Icon(Icons.wb_cloudy_outlined,
-                  color: Color(0xFF3B82F6), size: 24),
+              _getWeatherIcon(data.mainCondition),
               const SizedBox(width: 25),
               Text(
                 "${data.temperature.round()}°",
-                style: const TextStyle(
-                    color: Color(0xFF1E3A8A),
+                style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                     fontSize: 22,
                     fontWeight: FontWeight.w900),
               ),
@@ -118,5 +124,33 @@ class _ForecastState extends State<Forecast> {
         ],
       ),
     );
+  }
+
+  Widget _getWeatherIcon(String condition) {
+    IconData icon;
+    Color color = const Color(0xFF3B82F6);
+
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        icon = Icons.wb_sunny_outlined;
+        color = Colors.orange;
+        break;
+      case 'clouds':
+        icon = Icons.wb_cloudy_outlined;
+        break;
+      case 'rain':
+        icon = Icons.umbrella_outlined;
+        break;
+      case 'thunderstorm':
+        icon = Icons.thunderstorm_outlined;
+        break;
+      case 'snow':
+        icon = Icons.ac_unit_outlined;
+        break;
+      default:
+        icon = Icons.cloud_queue_outlined;
+    }
+
+    return Icon(icon, color: color, size: 28);
   }
 }

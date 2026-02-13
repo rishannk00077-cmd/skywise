@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:skywise/forecast.dart';
-import 'package:skywise/home.dart';
-import 'package:skywise/profile.dart';
-import 'package:skywise/saved.dart';
+import 'package:skywise/views/forecast_view.dart';
+import 'package:skywise/views/home_view.dart';
+import 'package:skywise/views/profile_view.dart';
+import 'package:skywise/views/saved_view.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -26,9 +26,9 @@ class _BottomNavState extends State<BottomNav> {
             index = value;
           });
         },
-        selectedItemColor: const Color(0xFF1E3A8A),
+        selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.blueGrey.shade200,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         showUnselectedLabels: true,
         selectedLabelStyle:
             const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -47,7 +47,7 @@ class _BottomNavState extends State<BottomNav> {
           // Could open an AI dialog here
         },
         elevation: 4,
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         child: const Icon(Icons.auto_awesome),
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:skywise/login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:skywise/views/login_view.dart';
+import 'package:skywise/views/navigation_view.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -14,9 +16,13 @@ class _SplashState extends State<Splash> {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
+        final user = FirebaseAuth.instance.currentUser;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Login()),
+          MaterialPageRoute(
+            builder: (context) =>
+                user != null ? const BottomNav() : const Login(),
+          ),
         );
       }
     });

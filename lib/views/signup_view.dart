@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:skywise/login.dart';
-import 'package:skywise/service.dart';
+import 'package:skywise/views/login_view.dart';
+import 'package:skywise/controllers/auth_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:skywise/providers/theme_provider.dart';
 
 class Signup extends StatefulWidget {
   const Signup({super.key});
@@ -10,6 +12,7 @@ class Signup extends StatefulWidget {
 }
 
 class _SignupState extends State<Signup> {
+  final AuthController _controller = AuthController();
   final TextEditingController namec = TextEditingController();
   final TextEditingController emailc = TextEditingController();
   final TextEditingController passwordc = TextEditingController();
@@ -18,8 +21,10 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -27,15 +32,14 @@ class _SignupState extends State<Signup> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.person_add_outlined,
-                    size: 70, color: Color(0xFF1E3A8A)),
+                Icon(Icons.person_add_outlined, size: 70, color: primaryColor),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   "Create Account",
                   style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E3A8A)),
+                      color: primaryColor),
                 ),
                 const Text(
                   "Join Skywise for smart weather insights",
@@ -43,16 +47,16 @@ class _SignupState extends State<Signup> {
                 ),
                 const SizedBox(height: 40),
                 _buildTextField(
-                    namec, "Full Name", Icons.person_outline, false),
+                    namec, "Full Name", Icons.person_outline, false, isDark),
+                const SizedBox(height: 15),
+                _buildTextField(emailc, "Email Address", Icons.email_outlined,
+                    false, isDark),
                 const SizedBox(height: 15),
                 _buildTextField(
-                    emailc, "Email Address", Icons.email_outlined, false),
-                const SizedBox(height: 15),
-                _buildTextField(
-                    passwordc, "Password", Icons.lock_outline, true),
+                    passwordc, "Password", Icons.lock_outline, true, isDark),
                 const SizedBox(height: 15),
                 _buildTextField(confirmPasswordc, "Confirm Password",
-                    Icons.lock_reset_outlined, true),
+                    Icons.lock_reset_outlined, true, isDark),
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -60,8 +64,8 @@ class _SignupState extends State<Signup> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (passwordc.text == confirmPasswordc.text) {
-                        register(namec.text, emailc.text, passwordc.text,
-                            confirmPasswordc.text, context);
+                        _controller.register(
+                            namec.text, emailc.text, passwordc.text, context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -69,7 +73,7 @@ class _SignupState extends State<Signup> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
+                      backgroundColor: primaryColor,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15)),
                       elevation: 0,
@@ -92,9 +96,9 @@ class _SignupState extends State<Signup> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => const Login())),
-                      child: const Text("Sign In",
+                      child: Text("Sign In",
                           style: TextStyle(
-                              color: Color(0xFF1E3A8A),
+                              color: primaryColor,
                               fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -108,19 +112,20 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label,
-      IconData icon, bool isPassword) {
+      IconData icon, bool isPassword, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F5FA),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F5FA),
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword ? visible : false,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
+          prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
