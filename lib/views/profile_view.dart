@@ -64,6 +64,7 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("Account",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,

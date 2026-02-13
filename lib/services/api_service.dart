@@ -5,8 +5,8 @@ import 'package:skywise/models/weather_model.dart';
 
 class ApiService {
   static const String _weatherApiKey =
-      'YOUR_OPENWEATHERMAP_API_KEY'; // Placeholder
-  static const String _geminiApiKey = 'YOUR_GEMINI_API_KEY'; // Placeholder
+      'd8592dbbdd7ee831839feb1a2d774f39'; // Placeholder
+  static const String _geminiApiKey = 'AIzaSyAs8s29JPwoZbE8JCyD2PY8xKj37lfugVc'; // Placeholder
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
   Future<WeatherData> fetchWeather(String city) async {

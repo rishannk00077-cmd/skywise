@@ -23,6 +23,7 @@ class _SavedState extends State<Saved> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("Saved Locations",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,

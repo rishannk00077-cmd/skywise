@@ -55,6 +55,7 @@ class _ForecastState extends State<Forecast> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,

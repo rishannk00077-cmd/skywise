@@ -119,6 +119,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: _buildSearchBar(isDark),

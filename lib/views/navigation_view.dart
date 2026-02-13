@@ -6,11 +6,9 @@ import 'package:skywise/views/saved_view.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
-
   @override
   State<BottomNav> createState() => _BottomNavState();
 }
-
 class _BottomNavState extends State<BottomNav> {
   int index = 0;
   List<Widget> Pages = [Home(), Forecast(), Saved(), Profile()];
