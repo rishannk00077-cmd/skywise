@@ -20,26 +20,40 @@ class ProfileController {
     return null;
   }
 
+  Future<String?> updateProfileImage(String filePath) async {
+    final url = await _cloudinaryService.uploadImage(filePath);
+    if (url != null) {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'PROFILE_IMAGE': url,
+        });
+        return url;
+      }
+    }
+    return null;
+  }
+
   Future<String?> pickAndUploadImage() async {
     final XFile? image =
         await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      final url = await _cloudinaryService.uploadImage(image.path);
-      if (url != null) {
-        final user = _auth.currentUser;
-        if (user != null) {
-          await _firestore.collection('users').doc(user.uid).update({
-            'PROFILE_IMAGE': url,
-          });
-          return url;
-        }
-      }
+      return await updateProfileImage(image.path);
     }
     return null;
   }
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  Future<void> updateUserName(String name) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'NAME': name,
+      });
+    }
   }
 
   Future<List<Map<String, dynamic>>> fetchSearchHistory() async {

@@ -53,7 +53,7 @@ class _SplashState extends State<Splash> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset("assets/icon/icon.png", width: 120),
+              Image.asset("assets/splash.png", width: 120),
               const SizedBox(height: 20),
               const Text(
                 "SKYWISE",

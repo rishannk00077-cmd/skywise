@@ -24,33 +24,21 @@ class _SavedState extends State<Saved> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text("Saved Locations",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+        title: const Text("Saved Locations"),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
       body: Stack(
         children: [
-          // Background Gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
-              ),
-            ),
-          ),
-
+          _buildBackground(isDark),
           StreamBuilder<QuerySnapshot>(
             stream: _controller.getSavedCitiesStream(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                    child: CircularProgressIndicator(color: Colors.white));
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2));
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return _buildEmptyState(isDark);
@@ -60,15 +48,14 @@ class _SavedState extends State<Saved> {
                 child: ListView.builder(
                   physics: const BouncingScrollPhysics(),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     var doc = snapshot.data!.docs[index];
-                    return _CityWeatherCard(
+                    return _PremiumCityCard(
                       cityName: doc['name'],
                       docId: doc.id,
                       controller: _controller,
-                      onDelete: () => _controller.removeCity(doc.id),
                       isDark: isDark,
                     );
                   },
@@ -81,102 +68,168 @@ class _SavedState extends State<Saved> {
     );
   }
 
+  Widget _buildBackground(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF020617)]
+              : [const Color(0xFF60A5FA), const Color(0xFFF8FAFC)],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bookmark_border_rounded,
-              size: 100, color: Colors.white.withOpacity(0.2)),
-          const SizedBox(height: 20),
-          const Text("No saved locations yet",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text("Search and bookmark cities on Home",
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.5), fontSize: 14)),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Icon(Icons.bookmark_add_outlined,
+                size: 64, color: isDark ? Colors.white24 : Colors.grey[300]),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            "No Saved Locations",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Quickly access weather for your\nfavorite cities here.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark ? Colors.white54 : Colors.grey[600],
+              fontSize: 16,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _CityWeatherCard extends StatelessWidget {
+class _PremiumCityCard extends StatelessWidget {
   final String cityName;
   final String docId;
   final SavedController controller;
-  final VoidCallback onDelete;
   final bool isDark;
 
-  const _CityWeatherCard({
+  const _PremiumCityCard({
     required this.cityName,
     required this.docId,
     required this.controller,
-    required this.onDelete,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 24),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10))
+                    ],
             ),
             child: FutureBuilder<WeatherData>(
               future: controller.fetchWeather(cityName),
               builder: (context, snapshot) {
-                return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  title: Text(
-                    cityName,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                        letterSpacing: -0.5),
+                final hasData = snapshot.hasData;
+                final weather = snapshot.data;
+
+                return Dismissible(
+                  key: Key(docId),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) => controller.removeCity(docId),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 32),
+                    color: Colors.redAccent.withOpacity(0.85),
+                    child: const Icon(Icons.delete_sweep_rounded,
+                        color: Colors.white, size: 28),
                   ),
-                  subtitle: Text(
-                    snapshot.hasData
-                        ? snapshot.data!.mainCondition.toUpperCase()
-                        : "LOADING...",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (snapshot.hasData)
-                        Text(
-                          "${snapshot.data!.temperature.round()}\u00B0",
-                          style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w200,
-                              color: Colors.white),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cityName,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                hasData
+                                    ? weather!.mainCondition.toUpperCase()
+                                    : "SYNCING...",
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.grey[600],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      const SizedBox(width: 15),
-                      IconButton(
-                        icon: const Icon(Icons.delete_sweep_rounded,
-                            color: Colors.white70, size: 24),
-                        onPressed: onDelete,
-                      ),
-                    ],
+                        if (hasData)
+                          Row(
+                            children: [
+                              Text(
+                                "${weather!.temperature.round()}°",
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w100,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              _getSmallIcon(weather.mainCondition),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -185,5 +238,28 @@ class _CityWeatherCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _getSmallIcon(String condition) {
+    IconData icon;
+    Color color;
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        icon = Icons.wb_sunny_rounded;
+        color = Colors.amber;
+        break;
+      case 'clouds':
+        icon = Icons.wb_cloudy_rounded;
+        color = Colors.grey;
+        break;
+      case 'rain':
+        icon = Icons.umbrella_rounded;
+        color = Colors.blue;
+        break;
+      default:
+        icon = Icons.wb_cloudy_rounded;
+        color = Colors.grey;
+    }
+    return Icon(icon, color: color.withOpacity(0.8), size: 28);
   }
 }

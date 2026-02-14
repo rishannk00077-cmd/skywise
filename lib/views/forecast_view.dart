@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:skywise/models/weather_model.dart';
-import 'package:intl/intl.dart';
 import 'package:skywise/controllers/forecast_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:skywise/providers/theme_provider.dart';
+import 'package:intl/intl.dart';
 import 'dart:ui';
 
 class Forecast extends StatefulWidget {
@@ -15,34 +15,33 @@ class Forecast extends StatefulWidget {
 
 class _ForecastState extends State<Forecast> {
   final ForecastController _controller = ForecastController();
-  List<ForecastData> _forecastList = [];
+  List<ForecastData>? _forecast;
   bool _isLoading = true;
-  String _city = "Mumbai";
 
   @override
   void initState() {
     super.initState();
-    _loadCityAndFetchForecast();
+    _loadForecast();
   }
 
-  Future<void> _loadCityAndFetchForecast() async {
-    final city = await _controller.loadLastCity();
-    setState(() {
-      _city = city;
-    });
-    _fetchForecast();
-  }
-
-  Future<void> _fetchForecast() async {
+  Future<void> _loadForecast() async {
     setState(() => _isLoading = true);
     try {
-      final forecast = await _controller.fetchForecast(_city);
+      final city = await _controller.loadLastCity();
+      final data = await _controller.fetchForecast(city);
       setState(() {
-        _forecastList = forecast;
+        _forecast = data;
         _isLoading = false;
       });
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: ${e.toString()}"),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         setState(() => _isLoading = false);
       }
     }
@@ -56,40 +55,26 @@ class _ForecastState extends State<Forecast> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        centerTitle: true,
+        title: const Text("Weekly Outlook"),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          "7-Day Forecast",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
-        ),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
-          // Background Gradient matching Home
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
-              ),
-            ),
-          ),
-
+          _buildBackground(isDark),
           _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white))
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2))
               : SafeArea(
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _forecastList.length,
+                    padding: const EdgeInsets.fromLTRB(24, 10, 24, 120),
+                    itemCount: _forecast?.length ?? 0,
                     itemBuilder: (context, index) {
-                      final item = _forecastList[index];
-                      return _buildPremiumForecastCard(item, isDark);
+                      final item = _forecast![index];
+                      return _buildForecastCard(item, isDark, index);
                     },
                   ),
                 ),
@@ -98,55 +83,72 @@ class _ForecastState extends State<Forecast> {
     );
   }
 
-  Widget _buildPremiumForecastCard(ForecastData data, bool isDark) {
+  Widget _buildBackground(bool isDark) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [const Color(0xFF0F172A), const Color(0xFF020617)]
+              : [const Color(0xFF3B82F6), const Color(0xFFF8FAFC)],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForecastCard(ForecastData data, bool isDark, int index) {
+    bool isToday = index == 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : (isToday
+                      ? Colors.white.withOpacity(0.9)
+                      : Colors.white.withOpacity(0.7)),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5))
+                    ],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                _buildDateBlock(data.date, isToday, isDark),
+                const SizedBox(width: 24),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('EEEE').format(data.date),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18),
-                      ),
-                      Text(
-                        DateFormat('d MMM').format(data.date),
+                        data.mainCondition.toUpperCase(),
                         style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                          color: isDark ? Colors.white70 : Colors.blueAccent,
                         ),
-                        child: Text(
-                          data.description,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getDetailAdvice(data.mainCondition),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white54 : Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -155,15 +157,15 @@ class _ForecastState extends State<Forecast> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _getSmallWeatherIcon(data.mainCondition),
-                    const SizedBox(height: 8),
                     Text(
-                      "${data.temperature.round()}\u00B0",
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w200),
+                      "${data.temperature.round()}°",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w200,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
+                    _getSmallWeatherIcon(data.mainCondition, isDark),
                   ],
                 ),
               ],
@@ -174,30 +176,66 @@ class _ForecastState extends State<Forecast> {
     );
   }
 
-  Widget _getSmallWeatherIcon(String condition) {
-    IconData icon;
-    Color color = Colors.white;
+  Widget _buildDateBlock(DateTime date, bool isToday, bool isDark) {
+    return Column(
+      children: [
+        Text(
+          DateFormat('EEE').format(date).toUpperCase(),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color: isToday
+                ? const Color(0xFF3978EF)
+                : (isDark ? Colors.white54 : Colors.grey[600]),
+          ),
+        ),
+        Text(
+          DateFormat('dd').format(date),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
 
+  String _getDetailAdvice(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return "Perfect for outdoor activities.";
+      case 'clouds':
+        return "Pleasant overcast skies.";
+      case 'rain':
+        return "Keep an umbrella handy.";
+      case 'thunderstorm':
+        return "Better to stay indoors.";
+      default:
+        return "Outlook remains stable.";
+    }
+  }
+
+  Widget _getSmallWeatherIcon(String condition, bool isDark) {
+    IconData icon;
+    Color color;
     switch (condition.toLowerCase()) {
       case 'clear':
         icon = Icons.wb_sunny_rounded;
+        color = Colors.amber;
         break;
       case 'clouds':
         icon = Icons.wb_cloudy_rounded;
+        color = Colors.grey;
         break;
       case 'rain':
         icon = Icons.umbrella_rounded;
-        break;
-      case 'thunderstorm':
-        icon = Icons.thunderstorm_rounded;
-        break;
-      case 'snow':
-        icon = Icons.ac_unit_rounded;
+        color = Colors.blue;
         break;
       default:
-        icon = Icons.cloud_queue_rounded;
+        icon = Icons.wb_cloudy_rounded;
+        color = Colors.grey;
     }
-
-    return Icon(icon, color: color, size: 30);
+    return Icon(icon, color: color.withOpacity(0.8), size: 20);
   }
 }
