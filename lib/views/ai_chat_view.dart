@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'dart:ui';
 
 class AIChatView extends StatefulWidget {
@@ -53,33 +54,43 @@ class _AIChatViewState extends State<AIChatView> {
     _scrollToBottom();
 
     try {
-      final model = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: _geminiApiKey,
-      );
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
 
       // Create conversation history from _messages
       // Skip the first message as it's just a greeting from the bot
-      final history = _messages.skip(1).take(_messages.length - 2).map((m) {
-        return m['role'] == 'user'
-            ? Content.text(m['content']!)
-            : Content.model([TextPart(m['content']!)]);
+      final contents = _messages.skip(1).map((m) {
+        return {
+          "role": m['role'] == 'user' ? "user" : "model",
+          "parts": [
+            {"text": m['content']!}
+          ]
+        };
       }).toList();
 
-      final chat = model.startChat(history: history);
-      final content = Content.text(userMessage);
-      final response = await chat.sendMessage(content);
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "contents": contents,
+        }),
+      );
 
-      if (mounted) {
-        setState(() {
-          _messages.add({
-            'role': 'assistant',
-            'content':
-                response.text ?? "I'm sorry, I couldn't process that response."
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final aiText = jsonResponse['candidates'][0]['content']['parts'][0]
+                ['text'] ??
+            "I'm sorry, I couldn't process that response.";
+
+        if (mounted) {
+          setState(() {
+            _messages.add({'role': 'assistant', 'content': aiText});
+            _isLoading = false;
           });
-          _isLoading = false;
-        });
-        _scrollToBottom();
+          _scrollToBottom();
+        }
+      } else {
+        throw Exception('Gemini API Error: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Skywise AI Error: $e');

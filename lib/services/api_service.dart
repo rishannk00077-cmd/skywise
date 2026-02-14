@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:skywise/models/weather_model.dart';
 
 class ApiService {
@@ -61,8 +60,8 @@ class ApiService {
   Future<Map<String, String>> getPersonalizedAIAdvice(
       WeatherData weather) async {
     try {
-      final model =
-          GenerativeModel(model: 'gemini-1.5-flash', apiKey: _geminiApiKey);
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
 
       final prompt = '''
       The current weather in ${weather.cityName} is ${weather.temperature}°C, ${weather.description}, humidity ${weather.humidity}%, wind speed ${weather.windSpeed}km/h. 
@@ -74,36 +73,55 @@ class ApiService {
       Keep each response to exactly 1 short sentence.
       ''';
 
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-      final text = response.text ?? "";
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ]
+        }),
+      );
 
-      // Clean up the response if it contains markdown code blocks
-      String cleanedJson =
-          text.replaceAll('```json', '').replaceAll('```', '').trim();
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final text =
+            jsonResponse['candidates'][0]['content']['parts'][0]['text'] ?? "";
 
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(cleanedJson);
-        return {
-          'outfit': decoded['outfit']?.toString() ??
-              "Dress comfortably for ${weather.temperature}°C.",
-          'travel': decoded['travel']?.toString() ??
-              "Travel normally, but stay aware of ${weather.description}.",
-          'health':
-              decoded['health']?.toString() ?? "Stay hydrated and active.",
-          'farming':
-              decoded['farming']?.toString() ?? "Monitor your crops regularly.",
-        };
-      } catch (e) {
-        // Fallback if AI response isn't perfect JSON
-        return {
-          'outfit': "Wear layers suitable for ${weather.temperature}°C.",
-          'travel':
-              "Check local traffic and weather conditions before heading out.",
-          'health':
-              "Take normal health precautions for ${weather.description}.",
-          'farming': "Agriculture: Keep an eye on soil moisture levels today.",
-        };
+        // Clean up the response if it contains markdown code blocks
+        String cleanedJson =
+            text.replaceAll('```json', '').replaceAll('```', '').trim();
+
+        try {
+          final Map<String, dynamic> decoded = jsonDecode(cleanedJson);
+          return {
+            'outfit': decoded['outfit']?.toString() ??
+                "Dress comfortably for ${weather.temperature}°C.",
+            'travel': decoded['travel']?.toString() ??
+                "Travel normally, but stay aware of ${weather.description}.",
+            'health':
+                decoded['health']?.toString() ?? "Stay hydrated and active.",
+            'farming': decoded['farming']?.toString() ??
+                "Monitor your crops regularly.",
+          };
+        } catch (e) {
+          // Fallback if AI response isn't perfect JSON
+          return {
+            'outfit': "Wear layers suitable for ${weather.temperature}°C.",
+            'travel':
+                "Check local traffic and weather conditions before heading out.",
+            'health':
+                "Take normal health precautions for ${weather.description}.",
+            'farming':
+                "Agriculture: Keep an eye on soil moisture levels today.",
+          };
+        }
+      } else {
+        throw Exception('Gemini API Error: ${response.statusCode}');
       }
     } catch (e) {
       return {
