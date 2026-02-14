@@ -53,31 +53,47 @@ class _AIChatViewState extends State<AIChatView> {
     _scrollToBottom();
 
     try {
-      final model =
-          GenerativeModel(model: 'gemini-1.5-flash', apiKey: _geminiApiKey);
-      final prompt =
-          'You are Skywise AI, a professional weather and travel assistant. Be concise, helpful, and use clear language. User asked: $userMessage';
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
+      final model = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: _geminiApiKey,
+      );
 
-      setState(() {
-        _messages.add({
-          'role': 'assistant',
-          'content': response.text ?? "I'm sorry, I couldn't process that."
+      // Create conversation history from _messages
+      // Skip the first message as it's just a greeting from the bot
+      final history = _messages.skip(1).take(_messages.length - 2).map((m) {
+        return m['role'] == 'user'
+            ? Content.text(m['content']!)
+            : Content.model([TextPart(m['content']!)]);
+      }).toList();
+
+      final chat = model.startChat(history: history);
+      final content = Content.text(userMessage);
+      final response = await chat.sendMessage(content);
+
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            'role': 'assistant',
+            'content':
+                response.text ?? "I'm sorry, I couldn't process that response."
+          });
+          _isLoading = false;
         });
-        _isLoading = false;
-      });
-      _scrollToBottom();
+        _scrollToBottom();
+      }
     } catch (e) {
-      setState(() {
-        _messages.add({
-          'role': 'assistant',
-          'content':
-              "I'm having trouble connecting to the network. Please try again later."
+      debugPrint('Skywise AI Error: $e');
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            'role': 'assistant',
+            'content':
+                "I'm having trouble connecting to Skywise AI. Please check your internet connection or API key."
+          });
+          _isLoading = false;
         });
-        _isLoading = false;
-      });
-      _scrollToBottom();
+        _scrollToBottom();
+      }
     }
   }
 
