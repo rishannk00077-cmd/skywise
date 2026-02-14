@@ -4,7 +4,7 @@ import 'package:skywise/models/weather_model.dart';
 
 class ApiService {
   static const String _weatherApiKey = 'd8592dbbdd7ee831839feb1a2d774f39';
-  static const String _geminiApiKey = 'AIzaSyAs8s29JPwoZbE8JCyD2PY8xKj37lfugVc';
+  static const String _geminiApiKey = 'AIzaSyAqznqfb3Weyns2H82DN76Dx57-bH8yZFM';
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
   Future<WeatherData> fetchWeather(String city) async {
@@ -61,7 +61,7 @@ class ApiService {
       WeatherData weather) async {
     try {
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
+          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$_geminiApiKey');
 
       final prompt = '''
       The current weather in ${weather.cityName} is ${weather.temperature}°C, ${weather.description}, humidity ${weather.humidity}%, wind speed ${weather.windSpeed}km/h. 
@@ -89,12 +89,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final text =
-            jsonResponse['candidates'][0]['content']['parts'][0]['text'] ?? "";
+        final aiText = (jsonResponse['candidates'][0]['content']['parts'][0]
+                    ['text'] ??
+                "I'm sorry, I couldn't process that response.")
+            .replaceAll('*', '');
 
         // Clean up the response if it contains markdown code blocks
         String cleanedJson =
-            text.replaceAll('```json', '').replaceAll('```', '').trim();
+            aiText.replaceAll('```json', '').replaceAll('```', '').trim();
 
         try {
           final Map<String, dynamic> decoded = jsonDecode(cleanedJson);

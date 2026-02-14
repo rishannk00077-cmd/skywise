@@ -21,7 +21,7 @@ class _AIChatViewState extends State<AIChatView> {
     }
   ];
   bool _isLoading = false;
-  static const String _geminiApiKey = 'AIzaSyAs8s29JPwoZbE8JCyD2PY8xKj37lfugVc';
+  static const String _geminiApiKey = 'AIzaSyAqznqfb3Weyns2H82DN76Dx57-bH8yZFM';
 
   @override
   void dispose() {
@@ -55,7 +55,7 @@ class _AIChatViewState extends State<AIChatView> {
 
     try {
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
+          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$_geminiApiKey');
 
       // Create conversation history from _messages
       // Skip the first message as it's just a greeting from the bot
@@ -78,9 +78,10 @@ class _AIChatViewState extends State<AIChatView> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final aiText = jsonResponse['candidates'][0]['content']['parts'][0]
-                ['text'] ??
-            "I'm sorry, I couldn't process that response.";
+        final aiText = (jsonResponse['candidates'][0]['content']['parts'][0]
+                    ['text'] ??
+                "I'm sorry, I couldn't process that response.")
+            .replaceAll('*', '');
 
         if (mounted) {
           setState(() {
