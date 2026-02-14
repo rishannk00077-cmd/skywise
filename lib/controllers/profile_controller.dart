@@ -42,5 +42,20 @@ class ProfileController {
     await _auth.signOut();
   }
 
+  Future<List<Map<String, dynamic>>> fetchSearchHistory() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('history')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    }
+    return [];
+  }
+
   User? get currentUser => _auth.currentUser;
 }

@@ -11,9 +11,15 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
+  double _opacity = 0.0;
+
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _opacity = 1.0);
+    });
+
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         final user = FirebaseAuth.instance.currentUser;
@@ -31,8 +37,47 @@ class _SplashState extends State<Splash> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(child: Image.asset("assets/splash.png", scale: 1)),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          ),
+        ),
+        child: AnimatedOpacity(
+          opacity: _opacity,
+          duration: const Duration(seconds: 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset("assets/icon/icon.png", width: 120),
+              const SizedBox(height: 20),
+              const Text(
+                "SKYWISE",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 4,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "AI-Powered Weather Intelligence",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

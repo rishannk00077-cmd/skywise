@@ -18,7 +18,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   WeatherData? _weather;
   String _currentCity = "Mumbai";
-  String _aiAdvice = "Fetching AI advice...";
+  Map<String, String> _aiAdvice = {
+    'outfit': 'Fetching suggestions...',
+    'travel': 'Fetching suggestions...',
+    'health': 'Fetching suggestions...',
+    'farming': 'Fetching suggestions...',
+  };
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -29,8 +34,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   }
 
   Future<void> _initData() async {
-    final lastCity = await _controller.loadLastCity();
-    _fetchWeatherData(lastCity);
+    try {
+      // Try fetching current location first
+      await _fetchWeatherByLocation();
+    } catch (e) {
+      // Fallback to last city if location fails
+      final lastCity = await _controller.loadLastCity();
+      _fetchWeatherData(lastCity);
+    }
   }
 
   Future<void> _fetchWeatherData(String city) async {
@@ -49,6 +60,32 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           SnackBar(content: Text("Could not find city: $city")),
         );
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _fetchWeatherByLocation() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _controller.fetchWeatherByLocation();
+      setState(() {
+        _weather = data['weather'];
+        _aiAdvice = data['advice'];
+        _currentCity = data['city'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Location Error: ${e.toString()}")),
+        );
+        // If location fails and we don't have weather yet, load last city
+        if (_weather == null) {
+          final lastCity = await _controller.loadLastCity();
+          _fetchWeatherData(lastCity);
+        } else {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -125,10 +162,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         title: _buildSearchBar(isDark),
         actions: [
           IconButton(
+            onPressed: _fetchWeatherByLocation,
+            icon: const Icon(Icons.my_location, color: Colors.white),
+          ),
+          IconButton(
             onPressed: _handleSaveCity,
             icon: const Icon(Icons.bookmark_add, color: Colors.white),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -176,7 +217,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         const SizedBox(height: 30),
                         _buildDetailGrid(),
                         const SizedBox(height: 30),
-                        _buildAIAdviceSection(),
+                        _buildAIAdvisorHeader(),
+                        const SizedBox(height: 15),
+                        _buildAICategorizedAdvice(),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -447,45 +490,93 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAIAdviceSection() {
+  Widget _buildAIAdvisorHeader() {
+    return Row(
+      children: [
+        const Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 24),
+        const SizedBox(width: 10),
+        const Text(
+          "SKYWISE ADVISOR",
+          style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              letterSpacing: 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAICategorizedAdvice() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+                child: _buildAdviceCard(
+                    Icons.checkroom_rounded, "Outfit", _aiAdvice['outfit']!)),
+            const SizedBox(width: 15),
+            Expanded(
+                child: _buildAdviceCard(Icons.flight_takeoff_rounded, "Travel",
+                    _aiAdvice['travel']!)),
+          ],
+        ),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Expanded(
+                child: _buildAdviceCard(Icons.health_and_safety_rounded,
+                    "Health", _aiAdvice['health']!)),
+            const SizedBox(width: 15),
+            Expanded(
+                child: _buildAdviceCard(Icons.agriculture_rounded, "Farming",
+                    _aiAdvice['farming']!)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdviceCard(IconData icon, String title, String advice) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(25),
+          height: 140,
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.white.withOpacity(0.12),
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome,
-                      color: Colors.amberAccent, size: 22),
-                  const SizedBox(width: 10),
+                  Icon(icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    "SKYWISE ADVISOR",
+                    title.toUpperCase(),
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.7),
                         fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 2),
+                        fontSize: 10,
+                        letterSpacing: 1.5),
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              const Spacer(),
               Text(
-                _aiAdvice,
+                advice,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
-                    height: 1.6,
-                    fontWeight: FontWeight.w400),
+                    fontSize: 13,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500),
               ),
             ],
           ),

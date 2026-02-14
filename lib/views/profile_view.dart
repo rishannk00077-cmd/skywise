@@ -4,6 +4,8 @@ import 'package:skywise/controllers/profile_controller.dart';
 import 'package:skywise/providers/theme_provider.dart';
 import 'package:skywise/views/login_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'dart:ui';
 
 class Profile extends StatefulWidget {
@@ -20,11 +22,13 @@ class _ProfileState extends State<Profile> {
   String _userEmail = "user@example.com";
   String? _profileImageUrl;
   bool _isUploading = false;
+  List<Map<String, dynamic>> _history = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadHistory();
   }
 
   Future<void> _loadUserData() async {
@@ -34,6 +38,15 @@ class _ProfileState extends State<Profile> {
         _userName = data['NAME'] ?? "User";
         _userEmail = data['EMAIL'] ?? _controller.currentUser?.email ?? "";
         _profileImageUrl = data['PROFILE_IMAGE'];
+      });
+    }
+  }
+
+  Future<void> _loadHistory() async {
+    final history = await _controller.fetchSearchHistory();
+    if (mounted) {
+      setState(() {
+        _history = history;
       });
     }
   }
@@ -94,14 +107,22 @@ class _ProfileState extends State<Profile> {
                   const SizedBox(height: 20),
                   _buildProfileHeader(isDark),
                   const SizedBox(height: 40),
+                  if (_history.isNotEmpty) ...[
+                    _buildGlassSection([
+                      _buildSectionHeader("Search History"),
+                      ..._history.map((item) => _buildHistoryTile(
+                          item['city'] ?? "Unknown",
+                          item['timestamp'],
+                          isDark)),
+                    ]),
+                    const SizedBox(height: 20),
+                  ],
                   _buildGlassSection([
                     _buildSectionHeader("Account Settings"),
                     _buildProfileTile(Icons.person_outline, "Edit Profile",
                         "Change your name or bio", isDark),
                     _buildProfileTile(Icons.notifications_none, "Notifications",
                         "Weather alerts & advice", isDark),
-                    _buildProfileTile(Icons.lock_outline, "Privacy",
-                        "Manage your data", isDark),
                   ]),
                   const SizedBox(height: 20),
                   _buildGlassSection([
@@ -113,8 +134,6 @@ class _ProfileState extends State<Profile> {
                     _buildSectionHeader("App Information"),
                     _buildProfileTile(Icons.info_outline, "About Skywise",
                         "v1.0.0 Stable", isDark),
-                    _buildProfileTile(Icons.help_outline, "Help Center",
-                        "FAQs and support", isDark),
                   ]),
                   const SizedBox(height: 40),
                   _buildLogoutButton(),
@@ -125,6 +144,22 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHistoryTile(String city, dynamic timestamp, bool isDark) {
+    String dateStr = "Recently";
+    if (timestamp != null && timestamp is Timestamp) {
+      dateStr = DateFormat('MMM d, h:mm a').format(timestamp.toDate());
+    }
+    return ListTile(
+      leading:
+          const Icon(Icons.history_rounded, color: Colors.white70, size: 20),
+      title: Text(city,
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+      trailing: Text(dateStr,
+          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
     );
   }
 
