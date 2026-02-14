@@ -61,7 +61,7 @@ class ApiService {
       WeatherData weather) async {
     try {
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
+          'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey');
 
       final prompt = '''
       The current weather in ${weather.cityName} is ${weather.temperature}°C, ${weather.description}, humidity ${weather.humidity}%, wind speed ${weather.windSpeed}km/h. 
