@@ -63,7 +63,7 @@ class _ProfileState extends State<Profile> {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() => _isUploading = true);
-      String? imageUrl = await _controller.updateProfileImage(image.path);
+      String? imageUrl = await _controller.updateProfileImage(image);
       if (mounted) {
         setState(() {
           _profileImageUrl = imageUrl;

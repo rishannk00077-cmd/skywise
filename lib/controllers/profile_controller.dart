@@ -20,8 +20,8 @@ class ProfileController {
     return null;
   }
 
-  Future<String?> updateProfileImage(String filePath) async {
-    final url = await _cloudinaryService.uploadImage(filePath);
+  Future<String?> updateProfileImage(XFile file) async {
+    final url = await _cloudinaryService.uploadImage(file);
     if (url != null) {
       final user = _auth.currentUser;
       if (user != null) {
@@ -38,7 +38,7 @@ class ProfileController {
     final XFile? image =
         await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      return await updateProfileImage(image.path);
+      return await updateProfileImage(image);
     }
     return null;
   }
