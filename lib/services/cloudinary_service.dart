@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class CloudinaryService {
   final String _cloudName = 'drc88o44v'; // Placeholder
@@ -12,16 +12,10 @@ class CloudinaryService {
           Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/image/upload');
 
       final request = http.MultipartRequest('POST', url)
-        ..fields['upload_preset'] = _uploadPreset;
-
-      final bytes = await file.readAsBytes();
-      final multipartFile = http.MultipartFile.fromBytes(
-        'file',
-        bytes,
-        filename: file.name,
-      );
-
-      request.files.add(multipartFile);
+        ..fields['upload_preset'] = _uploadPreset
+        ..files.add(http.MultipartFile.fromBytes(
+            'file', await file.readAsBytes(),
+            filename: file.name));
 
       final response = await request.send();
 
