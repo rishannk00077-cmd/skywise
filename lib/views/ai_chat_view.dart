@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:skywise/services/ai_service.dart';
 import 'dart:ui';
 
 class AIChatView extends StatefulWidget {
@@ -21,7 +20,7 @@ class _AIChatViewState extends State<AIChatView> {
     }
   ];
   bool _isLoading = false;
-  static const String _geminiApiKey = 'AIzaSyAqznqfb3Weyns2H82DN76Dx57-bH8yZFM';
+  final AIService _aiService = AIService();
 
   @override
   void dispose() {
@@ -54,44 +53,14 @@ class _AIChatViewState extends State<AIChatView> {
     _scrollToBottom();
 
     try {
-      final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$_geminiApiKey');
+      final aiResponse = await _aiService.getChatResponse(_messages);
 
-      // Create conversation history from _messages
-      // Skip the first message as it's just a greeting from the bot
-      final contents = _messages.skip(1).map((m) {
-        return {
-          "role": m['role'] == 'user' ? "user" : "model",
-          "parts": [
-            {"text": m['content']!}
-          ]
-        };
-      }).toList();
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "contents": contents,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final aiText = (jsonResponse['candidates'][0]['content']['parts'][0]
-                    ['text'] ??
-                "I'm sorry, I couldn't process that response.")
-            .replaceAll('*', '');
-
-        if (mounted) {
-          setState(() {
-            _messages.add({'role': 'assistant', 'content': aiText});
-            _isLoading = false;
-          });
-          _scrollToBottom();
-        }
-      } else {
-        throw Exception('Gemini API Error: ${response.statusCode}');
+      if (mounted) {
+        setState(() {
+          _messages.add({'role': 'assistant', 'content': aiResponse});
+          _isLoading = false;
+        });
+        _scrollToBottom();
       }
     } catch (e) {
       debugPrint('Skywise AI Error: $e');
